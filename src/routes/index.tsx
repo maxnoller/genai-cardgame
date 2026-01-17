@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Authenticated, Unauthenticated } from 'convex/react';
+import { Authenticated, Unauthenticated, useMutation, useQuery } from 'convex/react';
 import { useAuth } from '@workos/authkit-tanstack-react-start/client';
 import { getAuth, getSignInUrl, getSignUpUrl } from '@workos/authkit-tanstack-react-start';
 import type { User } from '@workos/authkit-tanstack-react-start';
+import { api } from '../../convex/_generated/api';
+import { useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -67,27 +69,85 @@ function SignInForm({ signInUrl, signUpUrl }: { signInUrl: string; signUpUrl: st
 }
 
 function GameLobby() {
+  const navigate = useNavigate();
+  const createGame = useMutation(api.games.create);
+  const joinGame = useMutation(api.games.join);
+  const openGames = useQuery(api.games.listOpen);
+  const myGames = useQuery(api.games.myGames);
+
+  const handleCreateGame = async () => {
+    const gameId = await createGame();
+    navigate({ to: '/game/$gameId', params: { gameId } });
+  };
+
+  const handleJoinGame = async (gameId: string) => {
+    await joinGame({ gameId: gameId as any });
+    navigate({ to: '/game/$gameId', params: { gameId } });
+  };
+
   return (
-    <div className="flex flex-col gap-6 max-w-lg mx-auto text-center">
-      <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-lg">
-        <h2 className="text-2xl font-bold mb-4">Welcome!</h2>
+    <div className="flex flex-col gap-8 w-full max-w-2xl">
+      {/* Create Game */}
+      <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-lg text-center">
+        <h2 className="text-2xl font-bold mb-4">Start a New Game</h2>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
-          Ready to draft your deck and battle with AI-generated cards?
+          Create a game and wait for an opponent to join
         </p>
         <button
           className="bg-foreground text-background px-8 py-3 rounded-md text-lg hover:opacity-90"
-          onClick={() => {
-            // TODO: Implement game creation
-            console.log('Create game');
-          }}
+          onClick={handleCreateGame}
         >
           Create New Game
         </button>
       </div>
 
-      <div className="text-sm text-slate-500">
-        <p>Or join an existing game with a code</p>
-      </div>
+      {/* My Active Games */}
+      {myGames && myGames.length > 0 && (
+        <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-lg">
+          <h3 className="text-xl font-bold mb-4">Your Active Games</h3>
+          <div className="flex flex-col gap-2">
+            {myGames.map((game) => (
+              <button
+                key={game._id}
+                className="flex justify-between items-center p-4 bg-slate-200 dark:bg-slate-700 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600"
+                onClick={() => navigate({ to: '/game/$gameId', params: { gameId: game._id } })}
+              >
+                <span>Game {game._id.slice(-6)}</span>
+                <span className="text-sm text-slate-500">
+                  {game.phase} • {game.status}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Open Games to Join */}
+      {openGames && openGames.length > 0 && (
+        <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-lg">
+          <h3 className="text-xl font-bold mb-4">Join a Game</h3>
+          <div className="flex flex-col gap-2">
+            {openGames.map((game) => (
+              <button
+                key={game._id}
+                className="flex justify-between items-center p-4 bg-slate-200 dark:bg-slate-700 rounded-md hover:bg-slate-300 dark:hover:bg-slate-600"
+                onClick={() => handleJoinGame(game._id)}
+              >
+                <span>Game by {game.player1Data?.name || 'Unknown'}</span>
+                <span className="text-sm bg-green-500 text-white px-2 py-1 rounded">
+                  Join
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {openGames?.length === 0 && myGames?.length === 0 && (
+        <p className="text-center text-slate-500">
+          No open games available. Create one to start playing!
+        </p>
+      )}
     </div>
   );
 }
