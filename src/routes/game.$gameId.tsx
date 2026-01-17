@@ -74,6 +74,13 @@ function GamePage() {
           />
         )}
 
+        {game.phase === 'generating' && draft && (
+          <WorldGenerationCrawl
+            game={game}
+            draft={draft}
+          />
+        )}
+
         {game.phase === 'play' && (
           <PlayPhase
             game={game}
@@ -101,6 +108,152 @@ function WaitingForPlayer({ game }: { game: any }) {
           The game will start automatically when someone joins
         </p>
       </div>
+    </div>
+  );
+}
+
+function WorldGenerationCrawl({ game, draft }: { game: any; draft: any }) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [showingWorld, setShowingWorld] = useState(false);
+
+  const player1Picks = draft.player1Picks || [];
+  const player2Picks = draft.player2Picks || [];
+
+  // When world description appears, start typing it out
+  useEffect(() => {
+    if (game.worldDescription && !showingWorld) {
+      setShowingWorld(true);
+      let index = 0;
+      const text = game.worldDescription;
+      const interval = setInterval(() => {
+        if (index <= text.length) {
+          setDisplayedText(text.slice(0, index));
+          index++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 15); // Faster typing speed
+      return () => clearInterval(interval);
+    }
+  }, [game.worldDescription, showingWorld]);
+
+  return (
+    <div className="bg-slate-900 rounded-xl p-8 border border-slate-700 overflow-hidden relative">
+      {/* Subtle starfield */}
+      <div className="absolute inset-0 overflow-hidden opacity-30">
+        {[...Array(30)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white animate-pulse"
+            style={{
+              width: Math.random() * 2 + 1 + 'px',
+              height: Math.random() * 2 + 1 + 'px',
+              top: Math.random() * 100 + '%',
+              left: Math.random() * 100 + '%',
+              animationDelay: Math.random() * 3 + 's',
+              animationDuration: Math.random() * 2 + 1 + 's',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Crawl Container */}
+      <div className="relative flex items-center justify-center min-h-[300px]" style={{ perspective: '300px' }}>
+        <div
+          className="w-full max-w-2xl text-center"
+          style={{
+            transform: 'rotateX(20deg)',
+            transformOrigin: '50% 100%',
+          }}
+        >
+          {/* Scrolling content */}
+          <div
+            className="text-amber-400"
+            style={{
+              animation: showingWorld ? 'none' : 'crawl 18s linear',
+            }}
+          >
+            {!showingWorld ? (
+              <>
+                <p className="text-purple-400 text-xs mb-4 tracking-widest uppercase">
+                  Forging your world...
+                </p>
+
+                <h2 className="text-xl font-bold mb-6 text-amber-300">
+                  A New Realm Emerges
+                </h2>
+
+                <div className="text-sm leading-relaxed space-y-3 px-4">
+                  <p className="text-green-400">
+                    <span className="font-medium">You</span>: {player1Picks.join(', ') || '...'}
+                  </p>
+                  <p className="text-blue-400">
+                    <span className="font-medium">Opponent</span>: {player2Picks.join(', ') || '...'}
+                  </p>
+                </div>
+
+                <div className="mt-6 flex justify-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                    <div className="w-2 h-2 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold mb-4 text-amber-300">
+                  {game.worldName || 'Your World'}
+                </h2>
+
+                <div className="text-sm leading-relaxed px-4 text-slate-200">
+                  <p>{displayedText}</p>
+                  {displayedText !== game.worldDescription && (
+                    <span className="inline-block w-1.5 h-4 bg-amber-400 animate-pulse ml-0.5" />
+                  )}
+                </div>
+
+                {game.resourceTypes && displayedText === game.worldDescription && (
+                  <div className="mt-6 space-y-2 animate-fade-in">
+                    <p className="text-xs text-slate-400 uppercase tracking-wider">Resources</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {game.resourceTypes.map((resource: string, i: number) => (
+                        <span
+                          key={i}
+                          className="px-3 py-1 bg-slate-800 border border-slate-600 rounded text-xs text-slate-300"
+                        >
+                          {resource}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Subtle gradient fades */}
+      <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-slate-900 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none" />
+
+      {/* CSS for crawl animation */}
+      <style>{`
+        @keyframes crawl {
+          0% { transform: translateY(50%); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(-30%); opacity: 0.8; }
+        }
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
@@ -251,6 +404,7 @@ function WordPicking({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pickWord = useMutation(api.draft.pickWord);
   const botAutoPick = useMutation(api.dev.botAutoPick);
+  const startWorldGeneration = useMutation(api.draft.startWorldGeneration);
   const generateWorld = useAction(api.ai.generateWorld);
 
   const isTestGame = game.player2Data?.name === '🤖 Bot Player';
@@ -267,12 +421,19 @@ function WordPicking({
         try {
           const result = await botAutoPick({ gameId });
 
-          // If draft is complete after bot pick, generate world
+          // If draft is complete after bot pick, start world generation
           if (result.draftComplete) {
+            const player1Themes = draft.player1Picks;
+            const player2Themes = [...draft.player2Picks, result.picked];
+
+            // Start the crawl animation by transitioning to generating phase
+            await startWorldGeneration({ gameId });
+
+            // Generate the world (will update game.worldDescription when done)
             await generateWorld({
               gameId,
-              player1Themes: draft.player1Picks,
-              player2Themes: [...draft.player2Picks, result.picked],
+              player1Themes,
+              player2Themes,
             });
           }
         } finally {
@@ -290,12 +451,19 @@ function WordPicking({
     try {
       const result = await pickWord({ gameId, word });
 
-      // If draft is complete, generate the world
+      // If draft is complete, start world generation with crawl animation
       if (result.draftComplete) {
+        const player1Themes = draft.player1Picks.concat(myRole.role === 'player1' ? [word] : []);
+        const player2Themes = draft.player2Picks.concat(myRole.role === 'player2' ? [word] : []);
+
+        // Start the crawl animation by transitioning to generating phase
+        await startWorldGeneration({ gameId });
+
+        // Generate the world (will update game.worldDescription when done)
         await generateWorld({
           gameId,
-          player1Themes: draft.player1Picks.concat(myRole.role === 'player1' ? [word] : []),
-          player2Themes: draft.player2Picks.concat(myRole.role === 'player2' ? [word] : []),
+          player1Themes,
+          player2Themes,
         });
       }
       // Bot will auto-pick via useEffect when it becomes their turn
@@ -449,10 +617,10 @@ function PlayPhase({
       </div>
 
       {/* Hand */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-lg">
-        <h3 className="font-bold mb-4">Your Hand</h3>
+      <div className="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+        <h3 className="font-bold mb-4 text-white">Your Hand</h3>
         {cards && cards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex flex-wrap gap-4 justify-center">
             {cards.map((card) => (
               <CardDisplay key={card._id} card={card} />
             ))}
@@ -468,48 +636,128 @@ function PlayPhase({
 }
 
 function CardDisplay({ card }: { card: any }) {
+  // MTG card dimensions: 2.5" x 3.5" (ratio ~0.714)
+  // Using 250px width = 350px height
   return (
-    <div className="border-2 border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden bg-gradient-to-b from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
-      {/* Card Image */}
-      <div className="h-40 bg-slate-300 dark:bg-slate-600 flex items-center justify-center">
-        {card.imageUrl ? (
-          <img src={card.imageUrl} alt={card.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-slate-500">Generating image...</span>
-        )}
-      </div>
-
-      {/* Card Content */}
-      <div className="p-3">
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="font-bold text-sm">{card.name}</h4>
-          <span className="text-xs bg-slate-300 dark:bg-slate-600 px-2 py-0.5 rounded">
-            {card.manaCost}
-          </span>
-        </div>
-
-        <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">
-          {card.cardType.charAt(0).toUpperCase() + card.cardType.slice(1)}
-        </p>
-
-        {/* Abilities */}
-        <div className="text-xs space-y-1 mb-2">
-          {card.abilities.map((ability: any, i: number) => (
-            <p key={i}>{ability.flavoredText}</p>
-          ))}
-        </div>
-
-        {/* Flavor text */}
-        <p className="text-xs italic text-slate-500 dark:text-slate-400">
-          "{card.flavorText}"
-        </p>
-
-        {/* Stats for creatures */}
-        {card.cardType === 'creature' && (
-          <div className="mt-2 text-right">
-            <span className="font-bold">{card.power}/{card.toughness}</span>
+    <div
+      className="relative rounded-xl overflow-hidden shadow-xl"
+      style={{
+        width: '250px',
+        height: '350px',
+        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+      }}
+    >
+      {/* Card Frame */}
+      <div className="absolute inset-1 rounded-lg overflow-hidden flex flex-col"
+        style={{
+          background: 'linear-gradient(180deg, #2d2d44 0%, #1f1f2e 100%)',
+          border: '2px solid #4a4a6a',
+        }}
+      >
+        {/* Header: Name and Mana Cost */}
+        <div
+          className="px-2 py-1.5"
+          style={{
+            background: 'linear-gradient(180deg, #3d3d5c 0%, #2d2d44 100%)',
+            borderBottom: '1px solid #4a4a6a',
+          }}
+        >
+          <div className="flex justify-between items-start gap-1">
+            <h4 className="font-bold text-xs text-white leading-tight">
+              {card.name}
+            </h4>
           </div>
-        )}
+          <div className="mt-0.5">
+            <span className="text-[8px] bg-amber-600/80 text-white px-1 py-0.5 rounded font-medium leading-none">
+              {card.manaCost}
+            </span>
+          </div>
+        </div>
+
+        {/* Card Art */}
+        <div
+          className="mx-1.5 mt-1 relative overflow-hidden"
+          style={{
+            height: '140px',
+            borderRadius: '4px',
+            border: '2px solid #4a4a6a',
+            background: '#1a1a2e',
+          }}
+        >
+          {card.imageUrl ? (
+            <img
+              src={card.imageUrl}
+              alt={card.name}
+              className="w-full h-full object-cover object-center"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-pulse text-slate-500 text-2xl mb-1">✨</div>
+                <span className="text-slate-500 text-[10px]">Generating...</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Type Line */}
+        <div
+          className="mx-1.5 mt-1 px-2 py-1"
+          style={{
+            background: 'linear-gradient(180deg, #3d3d5c 0%, #2d2d44 100%)',
+            borderRadius: '3px',
+            border: '1px solid #4a4a6a',
+          }}
+        >
+          <p className="text-[10px] text-slate-300 font-medium">
+            {card.cardType.charAt(0).toUpperCase() + card.cardType.slice(1)}
+          </p>
+        </div>
+
+        {/* Text Box: Abilities and Flavor */}
+        <div
+          className="mx-1.5 mt-1 flex-1 overflow-hidden flex flex-col"
+          style={{
+            background: '#f4f1e6',
+            borderRadius: '4px',
+            border: '2px solid #4a4a6a',
+          }}
+        >
+          <div className="p-2 flex-1 overflow-y-auto">
+            {/* Abilities */}
+            <div className="text-[10px] text-slate-800 space-y-1 leading-tight">
+              {card.abilities.map((ability: any, i: number) => (
+                <p key={i}>{ability.flavoredText}</p>
+              ))}
+            </div>
+
+            {/* Flavor text */}
+            {card.flavorText && (
+              <p className="text-[9px] italic text-slate-600 mt-2 pt-2 border-t border-slate-300 leading-tight">
+                "{card.flavorText}"
+              </p>
+            )}
+          </div>
+
+          {/* Power/Toughness for creatures */}
+          {card.cardType === 'creature' && (
+            <div className="absolute bottom-3 right-3">
+              <div
+                className="px-2 py-0.5 rounded font-bold text-sm text-white"
+                style={{
+                  background: 'linear-gradient(135deg, #4a4a6a 0%, #2d2d44 100%)',
+                  border: '2px solid #6a6a8a',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
+                {card.power}/{card.toughness}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom padding */}
+        <div className="h-1.5" />
       </div>
     </div>
   );

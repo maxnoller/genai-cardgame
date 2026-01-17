@@ -176,6 +176,39 @@ export const pickWord = mutation({
   },
 });
 
+// Start world generation (transitions to generating phase)
+export const startWorldGeneration = mutation({
+  args: {
+    gameId: v.id("games"),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.db.get(args.gameId);
+    if (!game) throw new Error("Game not found");
+
+    const draft = await ctx.db
+      .query("draftPools")
+      .withIndex("by_game", (q) => q.eq("gameId", args.gameId))
+      .first();
+
+    if (!draft) throw new Error("Draft pool not found");
+
+    // Transition to generating phase
+    await ctx.db.patch(args.gameId, {
+      phase: "generating",
+    });
+
+    // Clear the currentPicker to indicate picking is done
+    await ctx.db.patch(draft._id, {
+      currentPicker: undefined,
+    });
+
+    return {
+      player1Picks: draft.player1Picks,
+      player2Picks: draft.player2Picks,
+    };
+  },
+});
+
 // Get current player's role in the game
 export const getMyRole = query({
   args: { gameId: v.id("games") },

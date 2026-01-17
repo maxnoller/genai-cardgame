@@ -21,6 +21,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.10",
     "@convex-dev/react-query": "^0.0.0-alpha.11",
     "@google/genai": "^1.37.0",
     "@tanstack/react-query": "^5.89.0",
@@ -28,9 +29,11 @@
     "@tanstack/react-router-ssr-query": "^1.132.43",
     "@tanstack/react-start": "^1.132.43",
     "@workos/authkit-tanstack-react-start": "0.1.0",
+    "ai": "^6.0.39",
     "convex": "^1.31.0",
     "react": "^19.2.1",
-    "react-dom": "^19.2.1"
+    "react-dom": "^19.2.1",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^1.1.1",

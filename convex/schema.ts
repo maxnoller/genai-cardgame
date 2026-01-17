@@ -21,7 +21,7 @@ export default defineSchema({
     player1: v.id("players"),
     player2: v.optional(v.id("players")),
     currentTurn: v.optional(v.id("players")),
-    phase: v.union(v.literal("waiting"), v.literal("draft"), v.literal("play")),
+    phase: v.union(v.literal("waiting"), v.literal("draft"), v.literal("generating"), v.literal("play")),
     turnPhase: v.optional(
       v.union(
         v.literal("untap"),
