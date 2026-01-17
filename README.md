@@ -12,23 +12,54 @@ An AI-generated MTG-like card game where cards are dynamically created by large 
 
 ## Tech Stack
 
-- **Frontend**: React + TanStack Router
-- **Backend**: Convex
-- **Hosting**: Cloudflare Pages
-- **AI**: Google Gemini (text) + Nano Banana (images)
+- **Runtime**: [Bun](https://bun.sh)
+- **Frontend**: [TanStack Start](https://tanstack.com/start) (React 19 + TanStack Router + React Query)
+- **Backend**: [Convex](https://convex.dev)
+- **Auth**: [WorkOS AuthKit](https://workos.com/docs/authkit)
+- **AI**: [Google Gemini](https://ai.google.dev) (text + image generation)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com)
+- **Hosting**: [Cloudflare Pages](https://pages.cloudflare.com)
 
 ## Documentation
 
-- [Design Document](./docs/DESIGN.md)
+- [Design Document](./docs/DESIGN.md) - Full game mechanics, abilities, and database schema
 
 ## Development
 
+### Prerequisites
+
+- [Bun](https://bun.sh) installed
+- [Convex](https://convex.dev) account
+- [WorkOS](https://workos.com) account (for auth)
+- [Google AI Studio](https://aistudio.google.com) API key
+
+### Setup
+
 ```bash
 # Install dependencies
-npm install
+bun install
 
-# Run development server
-npm run dev
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your credentials
+
+# Start Convex backend (first time will prompt for project setup)
+bun run dev:backend
+
+# In another terminal, start the full dev server
+bun run dev
+```
+
+### Available Scripts
+
+```bash
+bun run dev          # Start frontend + backend
+bun run dev:frontend # Start only frontend
+bun run dev:backend  # Start only Convex
+bun run build        # Production build
+bun run typecheck    # TypeScript check
+bun run lint         # ESLint
+bun run format       # Prettier
 ```
 
 ## License

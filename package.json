@@ -1,0 +1,52 @@
+{
+  "name": "genai-cardgame",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "description": "An AI-generated MTG-like card game with real-time multiplayer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxnoller/genai-cardgame.git"
+  },
+  "scripts": {
+    "dev": "bun run --parallel dev:frontend dev:backend",
+    "dev:frontend": "vite dev",
+    "dev:backend": "convex dev",
+    "predev": "convex dev --until-success && convex dashboard",
+    "build": "vite build",
+    "start": "vite start",
+    "format": "prettier --write .",
+    "lint": "tsc && eslint . --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@convex-dev/react-query": "^0.0.0-alpha.11",
+    "@google/genai": "^1.37.0",
+    "@tanstack/react-query": "^5.89.0",
+    "@tanstack/react-router": "^1.132.41",
+    "@tanstack/react-router-ssr-query": "^1.132.43",
+    "@tanstack/react-start": "^1.132.43",
+    "@workos/authkit-tanstack-react-start": "0.1.0",
+    "convex": "^1.31.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@convex-dev/eslint-plugin": "^1.1.1",
+    "@tailwindcss/postcss": "^4",
+    "@tanstack/eslint-config": "^0.3.2",
+    "@tanstack/react-router-devtools": "^1.132.41",
+    "@types/node": "^24.10.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.0.4",
+    "dotenv": "^17.2.3",
+    "npm-run-all2": "^8.0.4",
+    "prettier": "^3.5.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^7.1.8",
+    "vite-tsconfig-paths": "^6.0.1"
+  }
+}
