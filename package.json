@@ -10,7 +10,7 @@
     "url": "git+https://github.com/maxnoller/genai-cardgame.git"
   },
   "scripts": {
-    "dev": "bun run --parallel dev:frontend dev:backend",
+    "dev": "run-p dev:frontend dev:backend",
     "dev:frontend": "vite dev",
     "dev:backend": "convex dev",
     "predev": "convex dev --until-success && convex dashboard",
