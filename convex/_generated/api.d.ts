@@ -10,6 +10,7 @@
 
 import type * as ai from "../ai.js";
 import type * as cards from "../cards.js";
+import type * as dev from "../dev.js";
 import type * as draft from "../draft.js";
 import type * as games from "../games.js";
 import type * as internal_ from "../internal.js";
@@ -23,6 +24,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   cards: typeof cards;
+  dev: typeof dev;
   draft: typeof draft;
   games: typeof games;
   internal: typeof internal_;

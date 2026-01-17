@@ -72,11 +72,17 @@ function GameLobby() {
   const navigate = useNavigate();
   const createGame = useMutation(api.games.create);
   const joinGame = useMutation(api.games.join);
+  const createTestGame = useMutation(api.dev.createTestGame);
   const openGames = useQuery(api.games.listOpen);
   const myGames = useQuery(api.games.myGames);
 
   const handleCreateGame = async () => {
     const gameId = await createGame();
+    navigate({ to: '/game/$gameId', params: { gameId } });
+  };
+
+  const handleCreateTestGame = async () => {
+    const { gameId } = await createTestGame();
     navigate({ to: '/game/$gameId', params: { gameId } });
   };
 
@@ -87,6 +93,20 @@ function GameLobby() {
 
   return (
     <div className="flex flex-col gap-8 w-full max-w-2xl">
+      {/* Dev Mode - Test Game */}
+      <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-6 rounded-lg text-white text-center">
+        <h2 className="text-xl font-bold mb-2">🧪 Dev Mode</h2>
+        <p className="text-white/80 mb-4 text-sm">
+          Start a test game with a bot opponent - no second player needed
+        </p>
+        <button
+          className="bg-white text-purple-600 px-6 py-2 rounded-md font-bold hover:bg-purple-50"
+          onClick={handleCreateTestGame}
+        >
+          Start Test Game
+        </button>
+      </div>
+
       {/* Create Game */}
       <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-lg text-center">
         <h2 className="text-2xl font-bold mb-4">Start a New Game</h2>

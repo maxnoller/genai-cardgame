@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation, useAction } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Id } from '../../convex/_generated/dataModel';
 
 export const Route = createFileRoute('/game/$gameId')({
@@ -30,11 +30,21 @@ function GamePage() {
     );
   }
 
+  const isTestGame = game.player2Data?.name === '🤖 Bot Player';
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <header className="bg-background p-4 border-b border-slate-200 dark:border-slate-800">
         <div className="flex justify-between items-center max-w-6xl mx-auto">
-          <h1 className="text-xl font-bold">Game {gameId.slice(-6)}</h1>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-slate-500 hover:text-slate-700">← Back</Link>
+            <h1 className="text-xl font-bold">Game {gameId.slice(-6)}</h1>
+            {isTestGame && (
+              <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded">
+                🧪 Test Mode
+              </span>
+            )}
+          </div>
           <div className="flex gap-4 items-center">
             <span className="text-sm px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded">
               {game.phase}
@@ -45,6 +55,10 @@ function GamePage() {
           </div>
         </div>
       </header>
+
+      {isTestGame && (
+        <DevControls gameId={gameId as Id<"games">} game={game} />
+      )}
 
       <main className="max-w-6xl mx-auto p-6">
         {game.phase === 'waiting' && (
@@ -236,11 +250,38 @@ function WordPicking({
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const pickWord = useMutation(api.draft.pickWord);
+  const botAutoPick = useMutation(api.dev.botAutoPick);
   const generateWorld = useAction(api.ai.generateWorld);
 
+  const isTestGame = game.player2Data?.name === '🤖 Bot Player';
   const isMyTurn = draft.currentPicker === myRole.playerId;
+  const isBotTurn = isTestGame && draft.currentPicker && draft.currentPicker !== myRole.playerId;
   const myPicks = myRole.role === 'player1' ? draft.player1Picks : draft.player2Picks;
   const opponentPicks = myRole.role === 'player1' ? draft.player2Picks : draft.player1Picks;
+
+  // Auto-trigger bot pick when it's bot's turn
+  useEffect(() => {
+    if (isBotTurn && !isSubmitting) {
+      const timer = setTimeout(async () => {
+        setIsSubmitting(true);
+        try {
+          const result = await botAutoPick({ gameId });
+
+          // If draft is complete after bot pick, generate world
+          if (result.draftComplete) {
+            await generateWorld({
+              gameId,
+              player1Themes: draft.player1Picks,
+              player2Themes: [...draft.player2Picks, result.picked],
+            });
+          }
+        } finally {
+          setIsSubmitting(false);
+        }
+      }, 1000); // 1 second delay for UX
+      return () => clearTimeout(timer);
+    }
+  }, [isBotTurn, draft.currentPicker]);
 
   const handlePick = async (word: string) => {
     if (!isMyTurn || isSubmitting) return;
@@ -257,6 +298,7 @@ function WordPicking({
           player2Themes: draft.player2Picks.concat(myRole.role === 'player2' ? [word] : []),
         });
       }
+      // Bot will auto-pick via useEffect when it becomes their turn
     } finally {
       setIsSubmitting(false);
     }
@@ -267,7 +309,7 @@ function WordPicking({
       {/* Turn indicator */}
       <div className={`text-center p-4 rounded-lg ${isMyTurn ? 'bg-green-100 dark:bg-green-900' : 'bg-slate-100 dark:bg-slate-800'}`}>
         <p className="text-lg font-bold">
-          {isMyTurn ? "Your turn to pick!" : "Waiting for opponent..."}
+          {isMyTurn ? "Your turn to pick!" : isBotTurn ? "🤖 Bot is picking..." : "Waiting for opponent..."}
         </p>
       </div>
 
@@ -466,6 +508,48 @@ function CardDisplay({ card }: { card: any }) {
         {card.cardType === 'creature' && (
           <div className="mt-2 text-right">
             <span className="font-bold">{card.power}/{card.toughness}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DevControls({ gameId, game }: { gameId: Id<"games">; game: any }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const skipToPlay = useMutation(api.dev.skipToPlayPhase);
+
+  const handleSkipToPlay = async () => {
+    await skipToPlay({ gameId });
+  };
+
+  return (
+    <div className="bg-purple-50 dark:bg-purple-950 border-b border-purple-200 dark:border-purple-800">
+      <div className="max-w-6xl mx-auto px-6 py-2">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="text-sm text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+        >
+          🧪 Dev Controls {isOpen ? '▼' : '▶'}
+        </button>
+
+        {isOpen && (
+          <div className="mt-3 pb-2 flex flex-wrap gap-3">
+            {game.phase === 'draft' && (
+              <button
+                onClick={handleSkipToPlay}
+                className="text-xs px-3 py-1.5 bg-purple-200 dark:bg-purple-800 rounded hover:bg-purple-300 dark:hover:bg-purple-700"
+              >
+                ⏭️ Skip to Play Phase
+              </button>
+            )}
+
+            <div className="text-xs text-purple-600 dark:text-purple-400 flex items-center gap-4">
+              <span>Phase: <strong>{game.phase}</strong></span>
+              <span>Turn: <strong>{game.turnPhase || 'N/A'}</strong></span>
+              <span>P1 Life: <strong>{game.player1Life}</strong></span>
+              <span>P2 Life: <strong>{game.player2Life}</strong></span>
+            </div>
           </div>
         )}
       </div>
